@@ -68,12 +68,7 @@ jobs:
               
               // PRにコメントを追加
               const mergeCommitList = mergeCommits.map(c => `- ${c.sha}: ${c.message}`).join('\n');
-              const commentBody = `⚠️ **Merge commit detected**
-
-This PR contains merge commit(s):
-${mergeCommitList}
-
-Consider rebasing to maintain a clean commit history.`;
+              const commentBody = `⚠️ **Merge commit detected**\nThis PR contains merge commit(s):\n${mergeCommitList}\nConsider rebasing to maintain a clean commit history.`;
               
               await github.rest.issues.createComment({
                 owner,
