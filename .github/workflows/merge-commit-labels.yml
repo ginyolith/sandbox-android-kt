@@ -1,0 +1,114 @@
+name: Merge Commit Detection
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  check-merge-commits:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Check for merge commits and add labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            const baseBranch = context.payload.pull_request.base.ref;
+            const headSha = context.payload.pull_request.head.sha;
+            const baseSha = context.payload.pull_request.base.sha;
+            
+            console.log(`PR #${number}: ${context.payload.pull_request.head.ref} -> ${baseBranch}`);
+            
+            // mainブランチへのPRは処理をスキップ
+            if (baseBranch === 'main') {
+              console.log('Skipping: PR targets main branch');
+              return;
+            }
+            
+            // PRに含まれるコミットを取得
+            const commits = await github.rest.pulls.listCommits({
+              owner,
+              repo,
+              pull_number: number
+            });
+            
+            console.log(`Found ${commits.data.length} commits in PR`);
+            
+            // merge commitを検出
+            let hasMergeCommit = false;
+            const mergeCommits = [];
+            
+            for (const commit of commits.data) {
+              if (commit.parents && commit.parents.length > 1) {
+                hasMergeCommit = true;
+                mergeCommits.push({
+                  sha: commit.sha.substring(0, 7),
+                  message: commit.commit.message.split('\n')[0]
+                });
+                console.log(`Merge commit found: ${commit.sha.substring(0, 7)} - ${commit.commit.message.split('\n')[0]}`);
+              }
+            }
+            
+            if (hasMergeCommit) {
+              // merge commitが含まれている場合にラベルを付与
+              const labels = ['has-merge-commit', 'needs-rebase'];
+              
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: number,
+                labels
+              });
+              
+              // PRにコメントを追加
+              const mergeCommitList = mergeCommits.map(c => `- ${c.sha}: ${c.message}`).join('\n');
+              const commentBody = `⚠️ **Merge commit detected**
+              
+This PR contains merge commit(s):
+${mergeCommitList}
+
+Consider rebasing to maintain a clean commit history.`;
+              
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: number,
+                body: commentBody
+              });
+              
+              console.log(`Added labels: ${labels.join(', ')}`);
+              console.log('Added warning comment about merge commits');
+            } else {
+              console.log('No merge commits found');
+              
+              // merge commitがない場合は関連ラベルを削除
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  name: 'has-merge-commit'
+                });
+                console.log('Removed has-merge-commit label');
+              } catch (error) {
+                // ラベルが存在しない場合は無視
+              }
+              
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  name: 'needs-rebase'
+                });
+                console.log('Removed needs-rebase label');
+              } catch (error) {
+                // ラベルが存在しない場合は無視
+              }
+            }

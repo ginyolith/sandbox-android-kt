@@ -1,0 +1,30 @@
+name: PR Auto Label
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - main
+
+jobs:
+  add-labels:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Add labels to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            
+            // mainブランチへのPRにラベルを付与
+            const labels = ['needs-review', 'main-merge'];
+            
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: number,
+              labels
+            });
+            
+            console.log(`Added labels: ${labels.join(', ')}`);
