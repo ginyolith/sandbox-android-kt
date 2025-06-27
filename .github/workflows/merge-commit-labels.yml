@@ -40,9 +40,22 @@ jobs:
             
             console.log(`Found ${commits.data.length} commits in PR`);
             
-            // コミット数が200以下ならスキップ
-            if (commits.data.length <= 200) {
-              console.log('Skipping: PR has 200 or fewer commits');
+            // 各コミットの変更行数を合計
+            let totalChanges = 0;
+            for (const commit of commits.data) {
+              const commitDetail = await github.rest.repos.getCommit({
+                owner,
+                repo,
+                ref: commit.sha
+              });
+              totalChanges += commitDetail.data.stats.additions + commitDetail.data.stats.deletions;
+            }
+            
+            console.log(`Total changes (additions + deletions): ${totalChanges}`);
+            
+            // 合計変更行数が200以下ならスキップ
+            if (totalChanges <= 200) {
+              console.log('Skipping: Total changes are 200 or fewer');
               return;
             }
             
