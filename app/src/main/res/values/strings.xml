@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">androidsandbox</string>
+    <string name="test_message">PR workflow test</string>
+    <string name="welcome_text">Welcome to Android Sandbox</string>
 </resources>
