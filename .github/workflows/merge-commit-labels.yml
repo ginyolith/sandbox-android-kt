@@ -69,7 +69,7 @@ jobs:
               // PRにコメントを追加
               const mergeCommitList = mergeCommits.map(c => `- ${c.sha}: ${c.message}`).join('\n');
               const commentBody = `⚠️ **Merge commit detected**
-              
+
 This PR contains merge commit(s):
 ${mergeCommitList}
 
