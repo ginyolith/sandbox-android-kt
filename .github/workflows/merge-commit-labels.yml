@@ -40,6 +40,12 @@ jobs:
             
             console.log(`Found ${commits.data.length} commits in PR`);
             
+            // コミット数が200以下ならスキップ
+            if (commits.data.length <= 200) {
+              console.log('Skipping: PR has 200 or fewer commits');
+              return;
+            }
+            
             // merge commitを検出
             let hasMergeCommit = false;
             const mergeCommits = [];
