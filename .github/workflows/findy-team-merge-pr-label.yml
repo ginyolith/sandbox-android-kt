@@ -1,4 +1,4 @@
-name: Merge Commit Detection
+name: FindyTeam+ PR Labeler Merge Commit 
 
 on:
   pull_request:
@@ -25,7 +25,7 @@ jobs:
             
             console.log(`PR #${number}: ${context.payload.pull_request.head.ref} -> ${baseBranch}`);
             
-            // mainブランチへのPRは処理をスキップ
+            // mainブランチへのPRは処理をスキップする。pr-labels.ymlでの'(findy用) 案件main'ラベル付与を優先するため
             if (baseBranch === 'main') {
               console.log('Skipping: PR targets main branch');
               return;
@@ -39,6 +39,25 @@ jobs:
             });
             
             console.log(`Found ${commits.data.length} commits in PR`);
+            
+            // 各コミットの変更行数を合計
+            let totalChanges = 0;
+            for (const commit of commits.data) {
+              const commitDetail = await github.rest.repos.getCommit({
+                owner,
+                repo,
+                ref: commit.sha
+              });
+              totalChanges += commitDetail.data.stats.additions + commitDetail.data.stats.deletions;
+            }
+            
+            console.log(`Total changes (additions + deletions): ${totalChanges}`);
+            
+            // 合計変更行数が200以下ならスキップ
+            if (totalChanges <= 200) {
+              console.log('Skipping: Total changes are 200 or fewer');
+              return;
+            }
             
             // merge commitを検出
             let hasMergeCommit = false;
@@ -57,7 +76,7 @@ jobs:
             
             if (hasMergeCommit) {
               // merge commitが含まれている場合にラベルを付与
-              const labels = ['has-merge-commit', 'needs-rebase'];
+              const labels = ['(findy用) merge PR'];
               
               await github.rest.issues.addLabels({
                 owner,
@@ -68,7 +87,7 @@ jobs:
               
               // PRにコメントを追加
               const mergeCommitList = mergeCommits.map(c => `- ${c.sha}: ${c.message}`).join('\n');
-              const commentBody = `⚠️ **Merge commit detected**\nThis PR contains merge commit(s):\n${mergeCommitList}\nConsider rebasing to maintain a clean commit history.`;
+              const commentBody = `⚠️ **Merge commit detected**\nThis PR contains merge commit(s):\n${mergeCommitList}`;
               
               await github.rest.issues.createComment({
                 owner,
