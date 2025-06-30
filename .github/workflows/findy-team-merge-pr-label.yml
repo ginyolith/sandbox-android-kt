@@ -2,7 +2,7 @@ name: FindyTeam+ PR Labeler Merge Commit
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [ready_for_review, opened, synchronize]
 
 jobs:
   check-merge-commits:

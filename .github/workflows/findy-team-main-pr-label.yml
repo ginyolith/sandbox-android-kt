@@ -2,7 +2,7 @@ name: FindyTeam+ PR Labeler Main Merge
 
 on:
   pull_request:
-    types: [opened]
+    types: [ready_for_review, opened]
     branches:
       - main
 
