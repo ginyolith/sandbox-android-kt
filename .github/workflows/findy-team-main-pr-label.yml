@@ -1,4 +1,4 @@
-name: PR Auto Label
+name: FindyTeam+ PR Labeler Main Merge
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
             const { owner, repo, number } = context.issue;
             
             // mainブランチへのPRにラベルを付与
-            const labels = ['needs-review', 'main-merge'];
+            const labels = ['(findy用) 案件main'];
             
             await github.rest.issues.addLabels({
               owner,
